@@ -1,1 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 50px 50px; // шаг сетки
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+app-root {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+app-start-screen, 
+.start-screen {
+  width: 100%;
+  height: 100%;
+}
