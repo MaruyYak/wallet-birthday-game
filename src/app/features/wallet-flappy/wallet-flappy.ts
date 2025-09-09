@@ -24,6 +24,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   private animationId: number | null = null;
   private lastTime = 0;
   private graphTimer = 0;
+  private finalButton: { x: number; y: number; width: number; height: number } | null = null;
 
   private telegramImg: HTMLImageElement | null = null;
 
@@ -52,8 +53,11 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     }
   }
 
-  private onPointerDown = (e?: PointerEvent) => {
-    this.handleAction();
+  private onPointerDown = (event: PointerEvent) => {
+    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    this.handleAction(x, y);
   };
 
   // вызывается из start-screen
@@ -105,14 +109,28 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     this.loop(this.lastTime);
   }
 
-  private handleAction() {
+  private handleAction(clickX?: number, clickY?: number){
     const st = this.engine.state;
-    if (st.isGameOver || st.isFinalCakeShown) {
-      // рестарт (игра продолжится сразу)
+    if (st.isFinalCakeShown && clickX != null && clickY != null && this.finalButton) {
+        const btn = this.finalButton;
+        if (
+          clickX >= btn.x &&
+          clickX <= btn.x + btn.width &&
+          clickY >= btn.y &&
+          clickY <= btn.y + btn.height
+        ) {
+          this.engine.reset();
+          this.resetGraph();
+          this.finalButton = null;
+        }
+      return;
+    }
+      if (st.isGameOver) {
       this.engine.reset();
       this.resetGraph();
       return;
     }
+
     this.engine.jump();
   }
 
@@ -144,16 +162,35 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     this.drawBackgroundGraph();
 
     // финальный торт (если показан) — рисуем и выходим
-    if (isFinalCakeShown) {
-      ctx.fillStyle = '#eeeeeeff';
-      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.textAlign = 'center';
-      ctx.fillText('🎂 Happy Birthday 🎂', width / 2, height / 2 - 40);
-      ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.fillText('🕯️🕯️🕯️🕯️', width / 2, height / 2);
-      ctx.textAlign = 'start';
-      return;
-    }
+  if (isFinalCakeShown) {
+    ctx.fillStyle = '#eeeeeeff';
+    ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.textAlign = 'center';
+    ctx.fillText('🎂 Happy Birthday 🎂', width / 2, height / 2 - 40);
+    ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.fillText('🕯️🕯️🕯️🕯️', width / 2, height / 2);
+
+    // кнопка "Celebrate Again"
+    const buttonWidth = 180;
+    const buttonHeight = 50;
+    const buttonX = width / 2 - buttonWidth / 2;
+    const buttonY = height / 2 + 60;
+
+    // кнопка
+    ctx.fillStyle = '#00ffc8';
+    ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
+
+    // текст кнопки
+    ctx.fillStyle = '#0b0f2c';
+    ctx.font = 'bold 18px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.fillText('Celebrate Again', width / 2, buttonY + buttonHeight / 2 + 6);
+
+    // сохраняем координаты кнопки для обработки клика
+    this.finalButton = { x: buttonX, y: buttonY, width: buttonWidth, height: buttonHeight };
+
+    ctx.textAlign = 'start';
+    return; // останавливаем рисование игрока и препятствий
+  }
 
     // --- игрок (Telegram) ---
     if (this.telegramImg && this.telegramImg.complete && this.telegramImg.naturalWidth > 0) {
@@ -198,7 +235,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     }
 
     // препятствия — стопки монет
-    ctx.font = '24px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.font = '30px system-ui, -apple-system, Segoe UI, Roboto';
     ctx.textAlign = 'center';
     for (const obs of obstacles) {
       const coinSize = 24;
@@ -218,7 +255,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
 
     // ингредиенты и свечи (на игровом поле)
     ctx.fillStyle = '#e53e3e';
-    ctx.font = 'bold 24px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.font = 'bold 35px system-ui, -apple-system, Segoe UI, Roboto';
     ctx.textAlign = 'center';
     for (const item of letters) {
       if (!item.collected) {
