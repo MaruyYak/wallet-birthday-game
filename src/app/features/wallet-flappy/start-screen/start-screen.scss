@@ -16,13 +16,18 @@
 }
 
 .card {
-  background: rgba(255,255,255,0.04);
-  border-radius: 16px;
-  padding: 32px 24px;
-  text-align: center;
-  box-shadow: 0 8px 28px rgba(2,6,23,0.6);
-  width: 340px;
-  animation: fadeInUp 0.8s ease-out;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 8px 28px rgba(2, 6, 23, 0.6);
+    width: 340px;
+    animation: _ngcontent-ng-c4061244977_fadeInUp 0.8s ease-out;
+    height: 50%;
+    align-items: center;
+    justify-content: center;
+    display: flex;    
+    flex-direction: column;
 }
 
 h1 {

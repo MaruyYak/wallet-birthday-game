@@ -41,21 +41,28 @@
 .bowl {
   position: absolute;
   bottom: 0;
-  left: 50%;
-  width: 400px;
-  transform: translateX(-50%);
+  // left: 50%;
+  width: 350px;
+  transform: translate(-10%, 15%)
 }
 
 .bowl.shake {
-  animation: shake 0.5s ease-in-out 3;
+  animation: 
+    shakeA 0.5s ease-in-out 3 forwards, 
+    fadeOut 0.5s ease forwards 1.5s;
 }
 
-@keyframes shake {
-  0% { transform: translateX(-50%) rotate(0deg); }
-  25% { transform: translateX(-50%) rotate(-10deg); }
-  50% { transform: translateX(-50%) rotate(10deg); }
-  75% { transform: translateX(-50%) rotate(-10deg); }
-  100% { transform: translateX(-50%) rotate(0deg); }
+@keyframes shakeA {
+  0% { transform: translate(-10%, 10%) rotate(0deg); }
+  25% { transform: translate(-10%, 10%) rotate(-10deg); }
+  50% { transform: translate(-10%, 10%) rotate(10deg); }
+  75% { transform: translate(-10%, 10%) rotate(-10deg); }
+  100% { transform: translate(-10%, 10%) rotate(0deg); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; visibility: hidden; }
 }
 
 .cake.big {
@@ -69,12 +76,10 @@
 }
 
 @keyframes appear {
-  0% { transform: translate(-65%, 20%) scale(0); opacity: 0; }
-  50% { transform: translate(-65%, 20%) scale(0.5); opacity: 0.5; }
-  100% { transform: translate(-65%, 20%) scale(1); opacity: 1; }
+  0% { transform: translate(-55%, 20%) scale(0); opacity: 0; }
+  50% { transform: translate(-55%, 20%) scale(0.5); opacity: 0.5; }
+  100% { transform: translate(-55%, 20%) scale(1); opacity: 1; }
 }
-
-
 
 .restart-btn {
   top: 135%;

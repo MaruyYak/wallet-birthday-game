@@ -20,6 +20,7 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
   falling: Ingredient[] = [];
   showCake = false;
   showBowlShake = false;
+  showBowl = true;
 
   isBrowser = false;
 
@@ -59,13 +60,16 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
 
   showFinalCakeSequence() {
     this.showBowlShake = true;
+      setTimeout(() => {
+      this.showBowl = false;
+    }, 1800);
     if (this.isBrowser) this.soundService.play('bowlShake');
 
     setTimeout(() => {
       this.showBowlShake = false;
       this.showCake = true;
       if (this.isBrowser) this.soundService.play('cakeAppear');
-    }, 2000); // 2 секунды тряски
+    }, 1500);
   }
 
   onRestart() {

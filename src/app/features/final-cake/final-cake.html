@@ -3,7 +3,7 @@
     <div class="cake-scene">
     <div *ngFor="let ing of falling" class="falling" [style.backgroundImage]="'url(' + ing.img.src + ')'"></div>
 
-    <div class="bowl" [class.shake]="showBowlShake">
+    <div *ngIf="showBowl" class="bowl" [class.shake]="showBowlShake">
         <img [src]="bowlImg" alt="bowl" />
     </div>
 
