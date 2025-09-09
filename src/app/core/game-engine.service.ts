@@ -35,6 +35,8 @@ export interface GameState {
 export class GameEngineService {
   state!: GameState;
 
+  public isGameStarted = false;
+
   getCollectedIngredients(): string[] {
   return this.collectedIngredients;
   }
@@ -51,8 +53,7 @@ export class GameEngineService {
     return this.candlesCount;
   }
 
-
-  // private cakeIngredients = ['🌾', '🥛'];
+  // cakeIngredients;
   private cakeIngredients = ['🌾', '🥛', '🥚', '🍯', '🍫', '🥭'];
   private collectedIngredients: string[] = [];
   private candlesCount = 4;
@@ -80,8 +81,30 @@ export class GameEngineService {
     this.collectedCandles = 0;
   }
 
+    startGame() {
+    this.isGameStarted = true;
+    // очищаем прогресс (на случай рестарта)
+    this.collectedIngredients = [];
+    this.collectedCandles = 0;
+    if (this.state) {
+      this.state.isGameOver = false;
+      this.state.isFinalCakeShown = false;
+      this.state.obstacles = [];
+      this.state.letters = [];
+      this.state.score = 0;
+      this.state.playerX = Math.round(this.state.width * 0.25);
+      this.state.playerY = Math.round(this.state.height * 0.5);
+      this.state.velocity = 0;
+      this.state.obstacleTimer = 0;
+    }
+  }
+
   update(dtSec: number) {
     const st = this.state;
+
+    if (!this.isGameStarted) return;
+    // если финальный торт показан — фиксируем состояние (остановка физики)
+    if (st.isFinalCakeShown) return;
     if (st.isGameOver) return;
 
     // движение игрока
@@ -162,13 +185,15 @@ export class GameEngineService {
   }
 
   jump() {
-    if (this.state.isGameOver) return;
+    if (this.state.isGameOver || !this.isGameStarted) return;
     this.state.velocity = -this.state.jumpPower;
   }
 
   reset() {
+    // полный reset, но ставим игру в состояние "идёт"
     const { width, height } = this.state;
     this.init(width, height);
+    this.isGameStarted = true;
   }
 
   private addObstacle() {

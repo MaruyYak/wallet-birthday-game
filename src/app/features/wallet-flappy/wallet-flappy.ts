@@ -5,20 +5,21 @@ import {
   HostListener,
   OnDestroy,
   ViewChild,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameEngineService } from '../../core/game-engine.service';
+import { StartScreenComponent } from './start-screen/start-screen';
 
 @Component({
   selector: 'app-wallet-flappy',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StartScreenComponent],
   templateUrl: './wallet-flappy.html',
   styleUrls: ['./wallet-flappy.scss'],
 })
-
 export class WalletFlappy implements AfterViewInit, OnDestroy {
-  @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   private ctx!: CanvasRenderingContext2D;
   private animationId: number | null = null;
   private lastTime = 0;
@@ -30,38 +31,17 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   private graphPoints: number[] = [];
   private graphMaxPoints = 150;
 
-  constructor(private engine: GameEngineService) {}
+  constructor(public engine: GameEngineService, private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    if (typeof window === 'undefined') return; // SSR protection
-
-    const canvas = this.canvasRef.nativeElement;
-    canvas.width = 400;
-    canvas.height = 600;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D context not available');
-    this.ctx = ctx;
-
-    this.engine.init(canvas.width, canvas.height);
-
-    for (let i = 0; i < this.graphMaxPoints; i++) {
-      this.graphPoints.push(canvas.height / 2);
-    }
-
-    this.telegramImg = new Image();
-    this.telegramImg.src = 'assets/wallet.png';
-
-    canvas.addEventListener('pointerdown', this.onPointerDown);
-    this.lastTime = performance.now();
-    this.loop(this.lastTime);
+    // ничего не инициализируем до нажатия Start — canvas создаётся после старта
   }
 
   ngOnDestroy(): void {
     this.stopLoop();
-    if (this.canvasRef?.nativeElement) {
-      this.canvasRef.nativeElement.removeEventListener('pointerdown', this.onPointerDown);
-    }
+    try {
+      this.canvasRef?.nativeElement?.removeEventListener('pointerdown', this.onPointerDown);
+    } catch {}
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -72,11 +52,63 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     }
   }
 
-  private onPointerDown = () => this.handleAction();
+  private onPointerDown = (e?: PointerEvent) => {
+    this.handleAction();
+  };
+
+  // вызывается из start-screen
+  onStartGame() {
+    // подготавливаем engine
+    // сначала удостоверимся, что canvas будет в DOM
+    this.engine.startGame();
+    this.cdr.detectChanges(); // просим Angular вставить canvas
+    // ждём следующий тик чтобы ViewChild обновился
+    setTimeout(() => this.initCanvas(), 0);
+  }
+
+  private initCanvas() {
+    if (typeof window === 'undefined') return; // SSR
+
+    // если уже были — остановим
+    this.stopLoop();
+    // canvas должен быть в DOM (rendered)
+    const canvas = this.canvasRef?.nativeElement;
+    if (!canvas) {
+      console.warn('Canvas not found during initCanvas');
+      return;
+    }
+
+    canvas.width = 400;
+    canvas.height = 600;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context not available');
+    this.ctx = ctx;
+
+    // инициализация движка с реальными размерами
+    this.engine.init(canvas.width, canvas.height);
+
+    // graph points
+    this.graphPoints = [];
+    for (let i = 0; i < this.graphMaxPoints; i++) {
+      this.graphPoints.push(canvas.height / 2);
+    }
+
+    // картинка игрока
+    this.telegramImg = new Image();
+    this.telegramImg.src = 'assets/wallet.png';
+
+    // события
+    canvas.addEventListener('pointerdown', this.onPointerDown);
+
+    this.lastTime = performance.now();
+    this.loop(this.lastTime);
+  }
 
   private handleAction() {
     const st = this.engine.state;
     if (st.isGameOver || st.isFinalCakeShown) {
+      // рестарт (игра продолжится сразу)
       this.engine.reset();
       this.resetGraph();
       return;
@@ -85,7 +117,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   }
 
   private loop = (now: number) => {
-    if (typeof window === 'undefined') return; // SSR protection
+    if (typeof window === 'undefined') return;
     const dtSec = Math.min((now - this.lastTime) / 1000, 0.033);
     this.lastTime = now;
 
@@ -104,120 +136,133 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   }
 
   private draw() {
-  const ctx = this.ctx;
-  const st = this.engine.state;
-  const { width, height, playerX, playerY, score, obstacles, letters, isGameOver, isFinalCakeShown, velocity } = st;
+    const ctx = this.ctx;
+    const st = this.engine.state;
+    const { width, height, playerX, playerY, obstacles, letters, isGameOver, isFinalCakeShown, velocity } = st;
 
-  // фон + график
-  this.drawBackgroundGraph();
+    // фон + график
+    this.drawBackgroundGraph();
 
-  // финальный торт
-  if (isFinalCakeShown) {
-    ctx.fillStyle = '#eeeeeeff';
-    ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
+    // финальный торт (если показан) — рисуем и выходим
+    if (isFinalCakeShown) {
+      ctx.fillStyle = '#eeeeeeff';
+      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textAlign = 'center';
+      ctx.fillText('🎂 Happy Birthday 🎂', width / 2, height / 2 - 40);
+      ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.fillText('🕯️🕯️🕯️🕯️', width / 2, height / 2);
+      ctx.textAlign = 'start';
+      return;
+    }
+
+    // --- игрок (Telegram) ---
+    if (this.telegramImg && this.telegramImg.complete && this.telegramImg.naturalWidth > 0) {
+      const size = 42;
+      const maxAngle = Math.PI / 4;
+      const minAngle = -Math.PI / 6;
+      const angle = Math.max(Math.min(velocity / 800, maxAngle), minAngle);
+
+      ctx.save();
+      ctx.translate(playerX, playerY);
+      ctx.rotate(angle);
+      ctx.drawImage(this.telegramImg, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    } else {
+      const size = 32;
+      ctx.fillStyle = '#2b6cb0';
+      const maxAngle = Math.PI / 6;
+      const minAngle = -Math.PI / 6;
+      const angle = Math.max(Math.min(velocity / 800, maxAngle), minAngle);
+
+      ctx.save();
+      ctx.translate(playerX, playerY);
+      ctx.rotate(angle);
+      ctx.fillRect(-size / 2, -size / 2, size, size);
+      ctx.restore();
+    }
+
+    // --- checklist ингредиентов и свечей (вместо score) ---
+    this.drawChecklist(ctx);
+
+    // Game Over overlay
+    if (isGameOver) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', width / 2, height / 2 - 10);
+      ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.fillText('Tap/Space — restart', width / 2, height / 2 + 20);
+      ctx.textAlign = 'start';
+    }
+
+    // препятствия — стопки монет
+    ctx.font = '24px system-ui, -apple-system, Segoe UI, Roboto';
     ctx.textAlign = 'center';
-    ctx.fillText('🎂 Happy Birthday 🎂', width / 2, height / 2 - 40);
-    ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.fillText('🕯️🕯️🕯️🕯️', width / 2, height / 2);
+    for (const obs of obstacles) {
+      const coinSize = 24;
+      const gapY = obs.gapY;
+      const bottomY = gapY + obs.gapHeight;
+
+      // верхняя стопка
+      for (let y = 0; y < gapY; y += coinSize) {
+        ctx.fillText('💰', obs.x + obs.width / 2, y + coinSize);
+      }
+
+      // нижняя стопка
+      for (let y = bottomY; y < height; y += coinSize) {
+        ctx.fillText('💰', obs.x + obs.width / 2, y + coinSize);
+      }
+    }
+
+    // ингредиенты и свечи (на игровом поле)
+    ctx.fillStyle = '#e53e3e';
+    ctx.font = 'bold 24px system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.textAlign = 'center';
+    for (const item of letters) {
+      if (!item.collected) {
+        ctx.fillText(item.char, item.x + 12, item.y + 18);
+      }
+    }
     ctx.textAlign = 'start';
-    return; // останавливаем рисование игрока и препятствий
   }
 
-  // игрок (Telegram)
-  if (this.telegramImg && this.telegramImg.complete && this.telegramImg.naturalWidth > 0) {
-    const size = 42;
-    const maxAngle = Math.PI / 4;
-    const minAngle = -Math.PI / 6;
-    const angle = Math.max(Math.min(velocity / 800, maxAngle), minAngle);
-
-    ctx.save();
-    ctx.translate(playerX, playerY);
-    ctx.rotate(angle);
-    ctx.drawImage(this.telegramImg, -size / 2, -size / 2, size, size);
-    ctx.restore();
-  } else {
-    const size = 32;
-    ctx.fillStyle = '#2b6cb0';
-    const maxAngle = Math.PI / 6;
-    const minAngle = -Math.PI / 6;
-    const angle = Math.max(Math.min(velocity / 800, maxAngle), minAngle);
-
-    ctx.save();
-    ctx.translate(playerX, playerY);
-    ctx.rotate(angle);
-    ctx.fillRect(-size / 2, -size / 2, size, size);
-    ctx.restore();
-  }
-
-  // счёт
-  ctx.font = 'bold 24px system-ui, -apple-system, Segoe UI, Roboto';
-  ctx.textAlign = 'left';
-  const padding = 16;
+ private drawChecklist(ctx: CanvasRenderingContext2D) {
+  const padding = 12;
+  const y = 20;
+  const box = 20;
   let x = padding;
-  const y = 32;
 
-  // составляем массив всех эмодзи: ингредиенты + свечи
-  const allItems = [
-    ...this.engine.getAllCakeIngredients(),
-    ...Array(this.engine.getCandlesCount()).fill('🕯️')
-  ];
+  const ingredients = this.engine.getAllCakeIngredients();
+  const collectedIngredients = this.engine.getCollectedIngredients();
+  const collectedCandles = this.engine.getCollectedCandles();
+  const totalCandles = this.engine.getCandlesCount();
 
-  for (const item of allItems) {
-    const isCollected =
-      this.engine.getCollectedIngredients().includes(item) ||
-      (item === '🕯️' && this.engine.getCollectedCandles() > 0);
-
-    ctx.fillStyle = isCollected ? '#ffd700' : 'rgba(255,255,255,0.3)';
-    ctx.fillText(item, x, y);
-    x += 32;
-  }
-
-  // Game Over
-  if (isGameOver) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.textAlign = 'center';
-    ctx.fillText('GAME OVER', width / 2, height / 2 - 10);
-    ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.fillText('Tap/Space — restart', width / 2, height / 2 + 20);
-    ctx.textAlign = 'start';
-  }
-
-  // препятствия — стопки монет
-  ctx.font = '24px system-ui, -apple-system, Segoe UI, Roboto';
   ctx.textAlign = 'center';
-  for (const obs of obstacles) {
-    const coinSize = 24;
-    const gapY = obs.gapY;
-    const topHeight = gapY;
-    const bottomY = gapY + obs.gapHeight;
-    const bottomHeight = height - bottomY;
+  ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
 
-    // верхняя стопка
-    for (let y = 0; y < topHeight; y += coinSize) {
-      ctx.fillText('💰', obs.x + obs.width / 2, y + coinSize);
-    }
-
-    // нижняя стопка
-    for (let y = bottomY; y < height; y += coinSize) {
-      ctx.fillText('💰', obs.x + obs.width / 2, y + coinSize);
-    }
+  // ингредиенты — серые по умолчанию, окрашиваются при сборе
+  for (const ing of ingredients) {
+    const isCollected = collectedIngredients.includes(ing);
+    ctx.fillStyle = isCollected ? '#fff' : 'rgba(255,255,255,0.4)'; // серый/белый
+    ctx.fillText(ing, x + box / 2, y);
+    x += box + 8;
   }
 
-  // ингредиенты и свечи
-  ctx.fillStyle = '#e53e3e';
-  ctx.font = 'bold 24px system-ui, -apple-system, Segoe UI, Roboto';
-  ctx.textAlign = 'center';
-  for (const item of letters) {
-    if (!item.collected) {
-      ctx.fillText(item.char, item.x + 12, item.y + 18);
-    }
+  // небольшая пауза между ингредиентами и свечами
+  x += 8;
+
+  // свечи
+  for (let i = 0; i < totalCandles; i++) {
+    const isCollected = i < collectedCandles;
+    ctx.fillStyle = isCollected ? '#fff' : 'rgba(255,255,255,0.4)';
+    ctx.fillText('🕯️', x + box / 2, y);
+    x += box + 8;
   }
+
   ctx.textAlign = 'start';
 }
-
 
   private resetGraph() {
     this.graphPoints = [];
@@ -232,7 +277,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
 
     const { height } = this.engine.state;
     this.graphPoints.shift();
-    const last = this.graphPoints[this.graphPoints.length - 1];
+    const last = this.graphPoints[this.graphPoints.length - 1] ?? height / 2;
     const newY = Math.min(Math.max(last + (Math.random() - 0.5) * 20, 50), height - 50);
     this.graphPoints.push(newY);
   }
@@ -248,8 +293,8 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    // сетка
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    // тонкая сетка
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
     ctx.lineWidth = 1;
     const gridSize = 50;
     for (let x = 0; x <= width; x += gridSize) {
@@ -265,13 +310,15 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       ctx.stroke();
     }
 
-    // график с тенью
+    // график
     ctx.beginPath();
-    ctx.moveTo(0, this.graphPoints[0]);
     const step = width / (this.graphMaxPoints - 1);
     this.graphPoints.forEach((y, i) => {
-      ctx.lineTo(i * step, y);
+      const x = i * step;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
+
     ctx.save();
     ctx.lineWidth = 3;
     ctx.shadowColor = 'rgba(0,255,200,0.4)';
@@ -288,7 +335,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     ctx.lineTo(0, height);
     ctx.closePath();
     const fillGradient = ctx.createLinearGradient(0, 0, 0, height);
-    fillGradient.addColorStop(0, 'rgba(0, 255, 200, 0.15)');
+    fillGradient.addColorStop(0, 'rgba(0, 255, 200, 0.12)');
     fillGradient.addColorStop(1, 'rgba(0, 255, 200, 0)');
     ctx.fillStyle = fillGradient;
     ctx.fill();
