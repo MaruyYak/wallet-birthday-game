@@ -35,6 +35,23 @@ export interface GameState {
 export class GameEngineService {
   state!: GameState;
 
+  getCollectedIngredients(): string[] {
+  return this.collectedIngredients;
+  }
+
+  getCollectedCandles(): number {
+    return this.collectedCandles;
+  }
+
+  getAllCakeIngredients(): string[] {
+    return this.cakeIngredients;
+  }
+
+  getCandlesCount(): number {
+    return this.candlesCount;
+  }
+
+
   // private cakeIngredients = ['🌾', '🥛'];
   private cakeIngredients = ['🌾', '🥛', '🥚', '🍯', '🍫', '🥭'];
   private collectedIngredients: string[] = [];

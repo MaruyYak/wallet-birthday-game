@@ -150,9 +150,27 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   }
 
   // счёт
-  ctx.fillStyle = '#ffffffff';
-  ctx.font = 'bold 20px system-ui, -apple-system, Segoe UI, Roboto';
-  ctx.fillText(`Score: ${score}`, 16, 32);
+  ctx.font = 'bold 24px system-ui, -apple-system, Segoe UI, Roboto';
+  ctx.textAlign = 'left';
+  const padding = 16;
+  let x = padding;
+  const y = 32;
+
+  // составляем массив всех эмодзи: ингредиенты + свечи
+  const allItems = [
+    ...this.engine.getAllCakeIngredients(),
+    ...Array(this.engine.getCandlesCount()).fill('🕯️')
+  ];
+
+  for (const item of allItems) {
+    const isCollected =
+      this.engine.getCollectedIngredients().includes(item) ||
+      (item === '🕯️' && this.engine.getCollectedCandles() > 0);
+
+    ctx.fillStyle = isCollected ? '#ffd700' : 'rgba(255,255,255,0.3)';
+    ctx.fillText(item, x, y);
+    x += 32;
+  }
 
   // Game Over
   if (isGameOver) {
