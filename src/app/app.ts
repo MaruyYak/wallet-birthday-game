@@ -1,11 +1,11 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
+import { WalletFlappy } from './features/wallet-flappy/wallet-flappy';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  standalone: true,
+  imports: [WalletFlappy],   // <-- добавили сюда
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  styleUrl: './app.scss',
 })
-export class App {
-  protected readonly title = signal('wallet-birthday-game');
-}
+export class App {}
