@@ -165,12 +165,12 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
 
     // финальный торт (если показан) — рисуем и выходим
   if (isFinalCakeShown) {
+    ctx.save();
+    ctx.globalAlpha = this.engine.finalCakeOpacity;
     ctx.fillStyle = '#eeeeeeff';
     ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
     ctx.textAlign = 'center';
     ctx.fillText('🎂 Happy Birthday 🎂', width / 2, height / 2 - 40);
-    ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.fillText('🕯️🕯️🕯️🕯️', width / 2, height / 2);
 
     // кнопка "Celebrate Again"
     const buttonWidth = 180;
@@ -221,19 +221,6 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     }
 
     this.drawChecklist(ctx);
-
-    // Game Over overlay
-    if (isGameOver) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, 0, width, height);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', width / 2, height / 2 - 10);
-      ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.fillText('Tap/Space — restart', width / 2, height / 2 + 20);
-      ctx.textAlign = 'start';
-    }
 
   // препятствия — стопки монет с оболочкой
   for (const obs of obstacles) {
@@ -311,6 +298,18 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
           ctx.drawImage(ing.img, item.x, item.y, 40, 40);
         }
       }
+    }
+     // Game Over overlay
+    if (isGameOver) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', width / 2, height / 2 - 10);
+      ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.fillText('Tap/Space — restart', width / 2, height / 2 + 20);
+      ctx.textAlign = 'start';
     }
   }
 
