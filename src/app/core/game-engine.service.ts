@@ -3,11 +3,12 @@ import { SoundService } from './sound-service/sound-service';
 
 export interface Obstacle {
   x: number;
-  gapY: number;
+  y: number;
   width: number;
-  gapHeight: number;
-  coinLogosTop: CoinLogo[];
-  coinLogosBottom: CoinLogo[];
+  height: number;
+  speed: number;
+  size: number;   
+  logo: CoinLogo;
 }
 
 export interface Letter {
@@ -35,7 +36,7 @@ export interface GameState {
   obstacles: Obstacle[];
   obstacleTimer: number;
   obstacleInterval: number;
-  letters: Letter[];
+  items: Letter[];
   isFinalCakeShown: boolean;
 }
 
@@ -143,8 +144,8 @@ getAllCakeIngredients(): Ingredient[] {
       isGameOver: false,
       obstacles: [],
       obstacleTimer: 0,
-      obstacleInterval: 1.8,
-      letters: [],
+      obstacleInterval: 1,
+      items: [],
       isFinalCakeShown: false
     };
 
@@ -162,7 +163,7 @@ getAllCakeIngredients(): Ingredient[] {
       this.state.isGameOver = false;
       this.state.isFinalCakeShown = false;
       this.state.obstacles = [];
-      this.state.letters = [];
+      this.state.items = [];
       this.state.score = 0;
       this.state.playerX = Math.round(this.state.width * 0.25);
       this.state.playerY = Math.round(this.state.height * 0.5);
@@ -193,31 +194,29 @@ getAllCakeIngredients(): Ingredient[] {
     // --- генерация препятствий ---
     st.obstacleTimer += dtSec;
     if (st.obstacleTimer > st.obstacleInterval && !st.isFinalCakeShown) {
-      st.obstacleTimer = 0;
+      st.obstacleTimer = 0.4;
       this.addObstacle();
     }
 
-    // --- движение труб ---
+    // --- движение препятствий ---
     for (let i = st.obstacles.length - 1; i >= 0; i--) {
       const obs = st.obstacles[i];
-      obs.x -= 200 * dtSec;
+      obs.x -= obs.speed * dtSec;
 
+      // проверка столкновения
       const playerSize = 32;
       if (
-        st.playerX + playerSize / 2 > obs.x &&
-        st.playerX - playerSize / 2 < obs.x + obs.width
+        st.playerX < obs.x + obs.size &&
+        st.playerX + playerSize > obs.x &&
+        st.playerY < obs.y + obs.size &&
+        st.playerY + playerSize > obs.y
       ) {
-        if (
-          st.playerY - playerSize / 2 < obs.gapY ||
-          st.playerY + playerSize / 2 > obs.gapY + obs.gapHeight
-        ) {
-          st.isGameOver = true;
-          this.soundService.play('collision');
-
-        }
+        st.isGameOver = true;
+        this.soundService.play('collision');
       }
 
-      if (obs.x + obs.width < 0) {
+      // удаление за экраном
+      if (obs.x + obs.size < 0) {
         st.obstacles.splice(i, 1);
         st.score++;
       }
@@ -230,7 +229,7 @@ getAllCakeIngredients(): Ingredient[] {
     }
 
     // --- движение предметов (ингредиенты/свечи) ---
-    for (const item of st.letters) {
+    for (const item of st.items) {
       if (item.collected) continue;
 
       item.x -= 200 * dtSec;
@@ -255,29 +254,24 @@ getAllCakeIngredients(): Ingredient[] {
       }
     }
 
-    st.letters = st.letters.filter(l => l.x + 32 > 0 && !l.collected);
+    st.items = st.items.filter(l => l.x + 32 > 0 && !l.collected);
 
     // --- проверка на финальный экран ---
-    const candlesOnField = st.letters.some(l => l.char === 'candle' && !l.collected);
     const allIngredientsCollected = this.collectedIngredients.length === this.cakeIngredients.filter(i => i.name !== 'candle').length;
+    const enoughCandles = this.collectedCandles >= this.candlesCount;
 
-    if (allIngredientsCollected && this.collectedCandles >= this.candlesCount && !candlesOnField) {
-      if (this.showFinalTimer == null) this.showFinalTimer = 0;
-      else {
+    if (allIngredientsCollected && enoughCandles) {
+      if (this.showFinalTimer == null) {
+        this.showFinalTimer = 0;
+      } else {
         this.showFinalTimer += dtSec;
-        if (this.showFinalTimer >= 0.5) { // 1 секунда задержки
+        if (this.showFinalTimer >= 0.5) { 
           this.showFinalCake();
           this.showFinalTimer = null;
         }
       }
     } else {
       this.showFinalTimer = null;
-    }
-
-    // --- плавная анимация появления ---
-    if (st.isFinalCakeShown && this.finalCakeOpacity < 1) {
-      this.finalCakeOpacity += dtSec; // скорость появления
-      if (this.finalCakeOpacity > 1) this.finalCakeOpacity = 1;
     }
   }
 
@@ -301,71 +295,61 @@ jump() {
     if (this.state.isFinalCakeShown) return;
 
     const { width, height } = this.state;
-    const gapHeight = 180;
-    const minY = 50;
-    const maxY = height - gapHeight - 50;
-    const gapY = Math.random() * (maxY - minY) + minY;
-
     const coinLogos = this.getCoinLogos();
-    const coinSize = 32;
+    const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
 
-    const topCount = Math.floor(gapY / coinSize);
-    const bottomCount = Math.floor((height - (gapY + gapHeight)) / coinSize);
-
-    const topStack: CoinLogo[] = [];
-    for (let i = 0; i < topCount; i++) {
-      const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
-      topStack.push(logo);
-    }
-
-    const bottomStack: CoinLogo[] = [];
-    for (let i = 0; i < bottomCount; i++) {
-      const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
-      bottomStack.push(logo);
-    }
+    const size = 48; // размер монетки с обводкой
+    const y = Math.random() * (height - size - 50) + 25;
 
     const newObs: Obstacle = {
-      x: width,
-      gapY,
-      width: 60,
-      gapHeight,
-      coinLogosTop: topStack,
-      coinLogosBottom: bottomStack
+       x: width + 50,       // старт за экраном справа
+      y,
+      width: 40,           // ширина/высота монетки
+      height: 40,
+      size: 40,
+      speed: 300,          // скорость движения в px/сек
+      logo
     };
 
     this.state.obstacles.push(newObs);
 
-    const collectedIngCount = this.collectedIngredients.length;
-    const totalIngCount = this.cakeIngredients.filter(i => i.name !== 'candle').length;
-    const candlesOnField = this.state.letters.filter(l => l.char === 'candle' && !l.collected).length;
-
-    if (collectedIngCount < totalIngCount) this.addIngredientInObstacle(newObs);
-    else if (this.collectedCandles < this.candlesCount && candlesOnField === 0) this.addCandleInObstacle(newObs);
+    // шанс добавить ингредиент рядом
+    if (Math.random() < 0.5) {
+      this.addIngredientNear(newObs);
+    }
   }
 
-  private addIngredientInObstacle(obs: Obstacle) {
+
+  private addIngredientNear(obs: Obstacle) {
     const nextIngredient = this.cakeIngredients.find(ing => !this.collectedIngredients.includes(ing));
     if (!nextIngredient) return;
 
-    const x = obs.x + obs.width / 2 - 16;
-    const y = obs.gapY + obs.gapHeight / 2 - 16;
+    const offsetX = 80; // чуть впереди монеты
+    const offsetY = (Math.random() - 0.5) * 60; // +- немного по вертикали
 
-    this.state.letters.push({ x, y, char: nextIngredient.name, collected: false });
+    const x = obs.x + offsetX;
+    const y = obs.y + offsetY;
+
+    this.state.items.push({ x, y, char: nextIngredient.name, collected: false });
   }
 
-  private addCandleInObstacle(obs: Obstacle) {
+  private addCandleNear(obs: Obstacle) {
     if (this.collectedCandles >= this.candlesCount) return;
 
-    const x = obs.x + obs.width / 2 - 16;
-    const y = obs.gapY + obs.gapHeight / 2 - 16;
+    const offsetX = 80; // чуть впереди препятствия
+    const offsetY = (Math.random() - 0.5) * 60; // случайный сдвиг вверх/вниз
 
-    this.state.letters.push({ x, y, char: 'candle', collected: false });
+    const x = obs.x + offsetX;
+    const y = obs.y + offsetY;
+
+    this.state.items.push({ x, y, char: 'candle', collected: false });
   }
+
 
   private showFinalCake() {
     this.state.isFinalCakeShown = true;
     this.state.obstacles = [];
-    this.state.letters = [];
+    this.state.items = [];
   }
 
 }

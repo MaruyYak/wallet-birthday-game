@@ -172,7 +172,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   private draw() {
     const ctx = this.ctx;
     const st = this.engine.state;
-    const { width, height, playerX, playerY, obstacles, letters, isGameOver, isFinalCakeShown, velocity } = st;
+    const { width, height, playerX, playerY, obstacles, items, isGameOver, isFinalCakeShown, velocity } = st;
 
     // фон + график
     this.drawBackgroundGraph();
@@ -209,76 +209,38 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
 
     this.drawChecklist(ctx);
 
-  // препятствия — стопки монет с оболочкой
+  // препятствия — "монетки в оболочке"
   for (const obs of obstacles) {
-    const coinSize = 32;
-    const gapY = obs.gapY;
-    const bottomY = gapY + obs.gapHeight;
+    const coinSize = obs.size;
+    const padding = 8;
 
-    const framePadding = 6; // отступ вокруг стопки
-    const frameColor = 'rgba(255, 255, 255, 0.36)'; // лёгкая прозрачная рамка
-    const frameRadius = 8; // скругление углов
+    // рамка вокруг монетки
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+    ctx.beginPath();
+    ctx.roundRect(
+      obs.x - coinSize / 2 - padding,
+      obs.y - coinSize / 2 - padding,
+      coinSize + padding * 2,
+      coinSize + padding * 2,
+      12
+    );
+    ctx.fill();
 
-    // верхняя стопка рамка
-    if (obs.coinLogosTop.length > 0) {
-      const frameHeight = obs.coinLogosTop.length * coinSize + framePadding * 2;
-      ctx.fillStyle = frameColor;
+    // сама монетка (логотип)
+    if (obs.logo.img.complete) {
+      ctx.drawImage(obs.logo.img, obs.x - coinSize / 2, obs.y - coinSize / 2, coinSize, coinSize);
+    } else {
+      ctx.fillStyle = '#ffd700';
       ctx.beginPath();
-      ctx.roundRect(
-        obs.x + obs.width / 2 - coinSize / 2 - framePadding,
-        0 - framePadding, // верхняя рамка от самого верха канваса
-        coinSize + framePadding * 2,
-        frameHeight,
-        frameRadius
-      );
+      ctx.arc(obs.x, obs.y, coinSize / 2, 0, Math.PI * 2);
       ctx.fill();
     }
-
-    // верхняя стопка монет
-    obs.coinLogosTop.forEach((logo, i) => {
-      if (logo.img.complete) {
-        ctx.drawImage(
-          logo.img,
-          obs.x + obs.width / 2 - coinSize / 2,
-          i * coinSize,
-          coinSize,
-          coinSize
-        );
-      }
-    });
-
-    // нижняя стопка рамка
-    if (obs.coinLogosBottom.length > 0) {
-      const frameHeight = obs.coinLogosBottom.length * coinSize + framePadding * 2;
-      ctx.fillStyle = frameColor;
-      ctx.beginPath();
-      ctx.roundRect(
-        obs.x + obs.width / 2 - coinSize / 2 - framePadding,
-        bottomY - framePadding,
-        coinSize + framePadding * 2,
-        frameHeight,
-        frameRadius
-      );
-      ctx.fill();
-    }
-
-    // нижняя стопка монет
-    obs.coinLogosBottom.forEach((logo, i) => {
-      if (logo.img.complete) {
-        ctx.drawImage(
-          logo.img,
-          obs.x + obs.width / 2 - coinSize / 2,
-          bottomY + i * coinSize,
-          coinSize,
-          coinSize
-        );
-      }
-    });
   }
 
 
+
     // ингредиенты и свечи (на игровом поле)
-    for (const item of letters) {
+    for (const item of items) {
       if (!item.collected) {
         const ing = this.engine.getAllCakeIngredients().find(i => i.name === item.char);
         if (ing?.img.complete) {
@@ -293,7 +255,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
       ctx.textAlign = 'center';
-      ctx.fillText('Oh No ): Try again', width / 2, height / 2 - 10);
+      ctx.fillText('Oh No :( Try again', width / 2, height / 2 - 10);
       ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
       ctx.fillText('Tap/Space — restart', width / 2, height / 2 + 20);
       ctx.textAlign = 'start';
