@@ -72,6 +72,7 @@ export class GameEngineService {
     }
   }
 
+
   async loadCakeIngredients() {
     const ingredientNames = [
       'flour',
@@ -245,7 +246,7 @@ export class GameEngineService {
       if (this.showFinalTimer == null) this.showFinalTimer = 0;
       else {
         this.showFinalTimer += dtSec;
-        if (this.showFinalTimer >= 1) { // 1 секунда задержки
+        if (this.showFinalTimer >= 0.5) { // 1 секунда задержки
           this.showFinalCake();
           this.showFinalTimer = null;
         }
@@ -340,14 +341,7 @@ export class GameEngineService {
   private showFinalCake() {
     this.state.isFinalCakeShown = true;
     this.state.obstacles = [];
-    this.state.letters = [
-      {
-        x: this.state.width / 2 - 32,
-        y: this.state.height / 2 - 32,
-        char: '🎂 Happy Birthday Telegram Wallet 🎂',
-        collected: true
-      }
-    ];
+    this.state.letters = [];
   }
 
 }

@@ -10,24 +10,26 @@ import {
 import { CommonModule } from '@angular/common';
 import { GameEngineService } from '../../core/game-engine.service';
 import { StartScreenComponent } from './start-screen/start-screen';
+import { FinalCakeComponent } from '../final-cake/final-cake';
 
 @Component({
   selector: 'app-wallet-flappy',
   standalone: true,
-  imports: [CommonModule, StartScreenComponent],
+  imports: [CommonModule, StartScreenComponent, FinalCakeComponent],
   templateUrl: './wallet-flappy.html',
   styleUrls: ['./wallet-flappy.scss'],
 })
 
 
 export class WalletFlappy implements AfterViewInit, OnDestroy {
-  @ViewChild('canvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+
   private ctx!: CanvasRenderingContext2D;
   private animationId: number | null = null;
   private lastTime = 0;
   private graphTimer = 0;
   private finalButton: { x: number; y: number; width: number; height: number } | null = null;
-
+  private isFinalCakeShown: boolean = false;
   private telegramImg: HTMLImageElement | null = null;
 
   // для графика
@@ -37,7 +39,18 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   constructor(public engine: GameEngineService, private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    // ничего не инициализируем до нажатия Start — canvas создаётся после старта
+    this.setCanvasSize();
+    window.addEventListener('resize', () => this.setCanvasSize());
+  }
+  
+  private setCanvasSize() {
+    if (!this.canvasRef) return;
+
+    const canvas = this.canvasRef.nativeElement;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    this.engine.init(canvas.width, canvas.height);
   }
 
   ngOnDestroy(): void {
@@ -64,10 +77,11 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
 
   // вызывается из start-screen
   async onStartGame() {
-    await this.engine.loadCoinLogos(); // подгружаем все изображения
+    this.engine.startGame();
+
+    await this.engine.loadCoinLogos();
     await this.engine.loadCakeIngredients();
 
-    this.engine.startGame();
     this.cdr.detectChanges();
     setTimeout(() => this.initCanvas(), 0);
   }
@@ -85,7 +99,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     }
 
     canvas.width = 400;
-    canvas.height = 600;
+    canvas.height = 700;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D context not available');
@@ -163,36 +177,9 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     // фон + график
     this.drawBackgroundGraph();
 
-    // финальный торт (если показан) — рисуем и выходим
-  if (isFinalCakeShown) {
-    ctx.save();
-    ctx.globalAlpha = this.engine.finalCakeOpacity;
-    ctx.fillStyle = '#eeeeeeff';
-    ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.textAlign = 'center';
-    ctx.fillText('🎂 Happy Birthday 🎂', width / 2, height / 2 - 40);
-
-    // кнопка "Celebrate Again"
-    const buttonWidth = 180;
-    const buttonHeight = 50;
-    const buttonX = width / 2 - buttonWidth / 2;
-    const buttonY = height / 2 + 60;
-
-    // кнопка
-    ctx.fillStyle = '#00ffc8';
-    ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
-
-    // текст кнопки
-    ctx.fillStyle = '#0b0f2c';
-    ctx.font = 'bold 18px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.fillText('Celebrate Again', width / 2, buttonY + buttonHeight / 2 + 6);
-
-    // сохраняем координаты кнопки для обработки клика
-    this.finalButton = { x: buttonX, y: buttonY, width: buttonWidth, height: buttonHeight };
-
-    ctx.textAlign = 'start';
-    return; // останавливаем рисование игрока и препятствий
-  }
+    if (isFinalCakeShown) {
+      return; 
+    }
 
     // --- игрок (Telegram) ---
     if (this.telegramImg && this.telegramImg.complete && this.telegramImg.naturalWidth > 0) {
@@ -421,5 +408,10 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     fillGradient.addColorStop(1, 'rgba(0, 255, 200, 0)');
     ctx.fillStyle = fillGradient;
     ctx.fill();
+  }
+
+  onRestartGame() {
+    this.engine.reset();
+    this.engine.isGameStarted = false; // вернуться на стартовый экран
   }
 }

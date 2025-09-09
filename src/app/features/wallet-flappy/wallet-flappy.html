@@ -1,10 +1,16 @@
-<!-- Если игра не запущена — показываем стартовый экран -->
 <ng-container *ngIf="!engine.isGameStarted; else gameTpl">
   <app-start-screen (start)="onStartGame()"></app-start-screen>
 </ng-container>
 
 <ng-template #gameTpl>
-  <div class="canvas-wrap" style="width:100%;height:100%;">
-    <canvas #canvas></canvas>
+  <div class="canvas-wrap">
+    <canvas #canvas class="game-canvas"></canvas>
   </div>
 </ng-template>
+
+<app-final-cake
+  *ngIf="engine.state"
+  [ingredients]="engine.getCollectedIngredients()"
+  [visible]="engine.state.isFinalCakeShown"
+  (restart)="engine.reset()">
+</app-final-cake>

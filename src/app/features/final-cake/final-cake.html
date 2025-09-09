@@ -1,0 +1,17 @@
+<div class="final-overlay" *ngIf="visible">
+  
+    <div class="cake-scene">
+    <div *ngFor="let ing of falling" class="falling" [style.backgroundImage]="'url(' + ing.img.src + ')'"></div>
+
+    <div class="bowl" [class.shake]="showBowlShake">
+        <img [src]="bowlImg" alt="bowl" />
+    </div>
+
+    <div *ngIf="showCake" class="cake big">
+        <img [src]="cakeImg" alt="cake" />
+    </div>
+
+        <button class="restart-btn" (click)="onRestart()">🎉 Make Again 🎉</button>
+
+    </div>
+</div>

@@ -1,18 +1,15 @@
-.game-wrap {
-  width: 100%;
-  height: 100dvh;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(180deg, #f4f9ff 0%, #dfeeff 100%);
+.game-wrap, .canvas-wrap {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .game-canvas {
-  width: 400px;
-  height: 600px;
-  border-radius: 16px;
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.08),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
   touch-action: manipulation;
   image-rendering: pixelated;
 }

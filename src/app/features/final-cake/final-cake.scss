@@ -1,0 +1,91 @@
+.final-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  flex-direction: column;
+  color: white;
+  text-align: center;
+}
+
+.cake-scene {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  transform: translateY(10%);
+}
+
+.falling {
+  width: 40px;
+  height: 40px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: fall 1s forwards;
+  visibility: visible;
+}
+
+@keyframes fall {
+  to {
+    top: 250px;
+    visibility: hidden;
+  }
+}
+
+.bowl {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 400px;
+  transform: translateX(-50%);
+}
+
+.bowl.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0% { transform: translateX(-50%) rotate(0deg); }
+  25% { transform: translateX(-50%) rotate(-10deg); }
+  50% { transform: translateX(-50%) rotate(10deg); }
+  75% { transform: translateX(-50%) rotate(-10deg); }
+  100% { transform: translateX(-50%) rotate(0deg); }
+}
+
+.cake.big {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  top: 20%;
+  width: 375px;
+  transform: translateX(-50%) scale(0);
+  transform-origin: center bottom;
+  animation: appear 0.6s ease-out forwards;
+}
+
+@keyframes appear {
+  0% { transform: translateX(-50%) scale(0); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+
+.restart-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  background: #ff6b81;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.restart-btn:hover {
+  background: #ff4757;
+}
