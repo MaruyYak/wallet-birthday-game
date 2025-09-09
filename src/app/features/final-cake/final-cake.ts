@@ -1,6 +1,7 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, AfterViewInit, Inject, PLATFORM_ID } from '@angular/core';
 import { Ingredient } from '../../core/game-engine.service';
+import { SoundService } from '../../core/sound-service/sound-service';
 
 @Component({
   selector: 'app-final-cake',
@@ -9,7 +10,7 @@ import { Ingredient } from '../../core/game-engine.service';
   imports: [CommonModule]
 })
 
-export class FinalCakeComponent implements OnChanges {
+export class FinalCakeComponent implements OnChanges, AfterViewInit {
   @Input() ingredients: Ingredient[] = [];
   @Input() visible = false;
   @Output() restart = new EventEmitter<void>();
@@ -17,9 +18,23 @@ export class FinalCakeComponent implements OnChanges {
   bowlImg = 'assets/cake/bowl.png';
   cakeImg = 'assets/cake/cake.png';
   falling: Ingredient[] = [];
-  
   showCake = false;
-  showBowlShake = false; // <-- добавили
+  showBowlShake = false;
+
+  isBrowser = false;
+
+  constructor(
+    private soundService: SoundService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(this.platformId);
+  }
+
+  ngAfterViewInit() {
+    if (this.isBrowser) {
+      this.soundService.loadAllSounds(); // загружаем звуки только в браузере
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible']?.currentValue) {
@@ -29,7 +44,6 @@ export class FinalCakeComponent implements OnChanges {
 
   private startAnimation() {
     this.showCake = false;
-    this.showBowlShake = false;
     this.falling = [];
 
     // имитация падения ингредиентов
@@ -37,19 +51,30 @@ export class FinalCakeComponent implements OnChanges {
       setTimeout(() => this.falling.push(ing), i * 600);
     });
 
-    // после падения всех ингредиентов включаем тряску миски
+    // после падения всех ингредиентов показать торт
     setTimeout(() => {
-      this.showBowlShake = true;
+      this.showFinalCakeSequence();
+    }, this.ingredients.length * 600 + 100);
+  }
 
-      setTimeout(() => {
-        this.showBowlShake = false;
-        this.showCake = true;
-      }, 1000);
+  showFinalCakeSequence() {
+    this.showBowlShake = true;
+    if (this.isBrowser) this.soundService.play('bowlShake');
 
-    }, this.ingredients.length * 600);
+    setTimeout(() => {
+      this.showBowlShake = false;
+      this.showCake = true;
+      if (this.isBrowser) this.soundService.play('cakeAppear');
+    }, 2000); // 2 секунды тряски
   }
 
   onRestart() {
+    if (this.isBrowser) {
+      this.soundService.stop('cakeAppear');
+      this.soundService.stop('bowlShake');
+    }
+
     this.restart.emit();
   }
+
 }

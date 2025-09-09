@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { SoundService } from './sound-service/sound-service';
 
 export interface Obstacle {
   x: number;
@@ -45,22 +46,29 @@ export interface Ingredient {
 
 @Injectable({ providedIn: 'root' })
 export class GameEngineService {
-  state!: GameState;
 
-  public isGameStarted = false;
-  private coinLogos: CoinLogo[] = [];
-  private cakeIngredients: Ingredient[] = [];
-  private collectedIngredients: Ingredient[] = [];
-  public candlesCount = 4;
-  public collectedCandles = 0;
-
-  // --- для плавного финального экрана ---
-  public finalCakeOpacity = 0;
-  private showFinalTimer: number | null = null;
-
-  getAllCakeIngredients(): Ingredient[] {
-    return this.cakeIngredients;
+constructor(private soundService: SoundService) {
+  if (typeof window !== 'undefined') {
+    this.soundService.loadAllSounds();
   }
+}
+
+
+state!: GameState;
+
+public isGameStarted = false;
+private coinLogos: CoinLogo[] = [];
+private cakeIngredients: Ingredient[] = [];
+private collectedIngredients: Ingredient[] = [];
+public candlesCount = 4;
+public collectedCandles = 0;
+
+public finalCakeOpacity = 0;
+private showFinalTimer: number | null = null;
+
+getAllCakeIngredients(): Ingredient[] {
+  return this.cakeIngredients;
+}
 
   getCollectedIngredients(): Ingredient[] {
     return this.collectedIngredients;
@@ -203,6 +211,8 @@ export class GameEngineService {
           st.playerY + playerSize / 2 > obs.gapY + obs.gapHeight
         ) {
           st.isGameOver = true;
+          this.soundService.play('collision');
+
         }
       }
 
@@ -210,6 +220,12 @@ export class GameEngineService {
         st.obstacles.splice(i, 1);
         st.score++;
       }
+    }
+
+        // --- проверка столкновения с верхней/нижней границей ---
+    if (st.playerY >= st.height - 16 && !st.isGameOver) {
+      st.isGameOver = true;
+      this.soundService.play('collision');
     }
 
     // --- движение предметов (ингредиенты/свечи) ---
@@ -233,6 +249,8 @@ export class GameEngineService {
           if (ing.name === 'candle') this.collectedCandles++;
           else this.collectIngredient(ing);
         }
+
+        this.soundService.play('ingredientCollect');
       }
     }
 
@@ -262,10 +280,15 @@ export class GameEngineService {
     }
   }
 
-  jump() {
-    if (this.state.isGameOver || !this.isGameStarted) return;
-    this.state.velocity = -this.state.jumpPower;
-  }
+
+jump() {
+  if (!this.state || this.state.isGameOver || !this.isGameStarted) return;
+
+  this.state.velocity = -this.state.jumpPower;
+  this.soundService.play('playerJump');
+}
+
+
 
   reset() {
     const { width, height } = this.state;
