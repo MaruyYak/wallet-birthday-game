@@ -62,6 +62,7 @@ private cakeIngredients: Ingredient[] = [];
 private collectedIngredients: Ingredient[] = [];
 public candlesCount = 4;
 public collectedCandles = 0;
+private lastJumpTime = 0;
 
 public finalCakeOpacity = 0;
 private showFinalTimer: number | null = null;
@@ -282,9 +283,10 @@ getAllCakeIngredients(): Ingredient[] {
 
 
 jump() {
-  if (!this.state || this.state.isGameOver || !this.isGameStarted) return;
-
+  if (!this.state || this.state.isGameOver || !this.isGameStarted || new Date().getTime() - 200 < this.lastJumpTime) return;
+  this.lastJumpTime = new Date().getTime();
   this.state.velocity = -this.state.jumpPower;
+  this.soundService.play('playerJump');
 }
 
 

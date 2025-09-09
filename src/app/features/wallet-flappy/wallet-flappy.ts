@@ -146,7 +146,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       this.resetGraph();
       return;
     }
-
+    
     this.engine.jump();
   }
 
