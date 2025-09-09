@@ -85,11 +85,11 @@ getAllCakeIngredients(): Ingredient[] {
 
   async loadCakeIngredients() {
     const ingredientNames = [
-      // 'flour',
-      // 'egg',
-      // 'sugar',
-      // 'cocoa',
-      // 'strawberry',
+      'flour',
+      'egg',
+      'sugar',
+      'cocoa',
+      'strawberry',
       'cream',
       'candle'
     ];
@@ -182,20 +182,19 @@ getAllCakeIngredients(): Ingredient[] {
     st.velocity += st.gravity * dtSec;
     st.playerY += st.velocity * dtSec;
 
-    if (st.playerY < 16) {
-      st.playerY = 16;
-      st.velocity = 0;
-    }
-    if (st.playerY > st.height - 16) {
-      st.playerY = st.height - 16;
-      st.isGameOver = true;
-    }
-
     // --- генерация препятствий ---
     st.obstacleTimer += dtSec;
     if (st.obstacleTimer > st.obstacleInterval && !st.isFinalCakeShown) {
       st.obstacleTimer = 0.4;
       this.addObstacle();
+    }
+
+    // --- проверка выхода за границы (телепорт) ---
+    const playerSize = 32;
+    if (st.playerY > st.height) {
+      st.playerY = 0 - playerSize / 2; // упал вниз — появляется сверху
+    } else if (st.playerY + playerSize < 0) {
+      st.playerY = st.height - playerSize / 2; // вылетел вверх — появляется снизу
     }
 
     // --- движение препятствий ---
@@ -220,12 +219,6 @@ getAllCakeIngredients(): Ingredient[] {
         st.obstacles.splice(i, 1);
         st.score++;
       }
-    }
-
-        // --- проверка столкновения с верхней/нижней границей ---
-    if (st.playerY >= st.height - 16 && !st.isGameOver) {
-      st.isGameOver = true;
-      this.soundService.play('collision');
     }
 
     // --- движение предметов (ингредиенты/свечи) ---
