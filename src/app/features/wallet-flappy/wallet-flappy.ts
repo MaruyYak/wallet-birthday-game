@@ -306,7 +306,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 28px system-ui, -apple-system, Segoe UI, Roboto';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', width / 2, height / 2 - 10);
+      ctx.fillText('Oh No ): Try again', width / 2, height / 2 - 10);
       ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
       ctx.fillText('Tap/Space — restart', width / 2, height / 2 + 20);
       ctx.textAlign = 'start';
