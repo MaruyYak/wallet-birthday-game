@@ -61,12 +61,10 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   };
 
   // вызывается из start-screen
-  onStartGame() {
-    // подготавливаем engine
-    // сначала удостоверимся, что canvas будет в DOM
+  async onStartGame() {
+    await this.engine.loadCoinLogos(); // подгружаем все изображения
     this.engine.startGame();
-    this.cdr.detectChanges(); // просим Angular вставить canvas
-    // ждём следующий тик чтобы ViewChild обновился
+    this.cdr.detectChanges();
     setTimeout(() => this.initCanvas(), 0);
   }
 
@@ -235,22 +233,24 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
     }
 
     // препятствия — стопки монет
-    ctx.font = '30px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.textAlign = 'center';
     for (const obs of obstacles) {
-      const coinSize = 24;
+      const coinSize = 32;
       const gapY = obs.gapY;
       const bottomY = gapY + obs.gapHeight;
 
       // верхняя стопка
-      for (let y = 0; y < gapY; y += coinSize) {
-        ctx.fillText('💰', obs.x + obs.width / 2, y + coinSize);
-      }
+      obs.coinLogosTop.forEach((logo, i) => {
+        if (logo.img.complete) {
+          ctx.drawImage(logo.img, obs.x + obs.width / 2 - coinSize / 2, i * coinSize, coinSize, coinSize);
+        }
+      });
 
       // нижняя стопка
-      for (let y = bottomY; y < height; y += coinSize) {
-        ctx.fillText('💰', obs.x + obs.width / 2, y + coinSize);
-      }
+      obs.coinLogosBottom.forEach((logo, i) => {
+        if (logo.img.complete) {
+          ctx.drawImage(logo.img, obs.x + obs.width / 2 - coinSize / 2, bottomY + i * coinSize, coinSize, coinSize);
+        }
+      });
     }
 
     // ингредиенты и свечи (на игровом поле)

@@ -5,6 +5,8 @@ export interface Obstacle {
   gapY: number;
   width: number;
   gapHeight: number;
+  coinLogosTop: CoinLogo[];
+  coinLogosBottom: CoinLogo[];
 }
 
 export interface Letter {
@@ -12,6 +14,11 @@ export interface Letter {
   y: number;
   char: string;
   collected: boolean;
+}
+
+export interface CoinLogo {
+  name: string; // название монеты
+  img: HTMLImageElement;
 }
 
 export interface GameState {
@@ -36,6 +43,8 @@ export class GameEngineService {
   state!: GameState;
 
   public isGameStarted = false;
+  private coinLogos: CoinLogo[] = [];
+
 
   getCollectedIngredients(): string[] {
   return this.collectedIngredients;
@@ -51,6 +60,28 @@ export class GameEngineService {
 
   getCandlesCount(): number {
     return this.candlesCount;
+  }
+
+    async loadCoinLogos() {
+    const coins = ['btc', 'eth', 'usdt', 'ton', 'sol', 'bnb', 'shib', 'doge'];
+    this.coinLogos = [];
+
+    for (const name of coins) {
+      const img = new Image();
+      img.src = `assets/${name}.png`;
+      await new Promise<void>((res, rej) => {
+        img.onload = () => res();
+        img.onerror = () => {
+          console.warn(`Coin image not loaded: ${name}`);
+          res();
+        };
+      });
+      this.coinLogos.push({ name, img });
+    }
+  }
+
+  getCoinLogos(): CoinLogo[] {
+    return this.coinLogos;
   }
 
   // cakeIngredients;
@@ -197,29 +228,51 @@ export class GameEngineService {
   }
 
   private addObstacle() {
-    if (this.state.isFinalCakeShown) return;
+  if (this.state.isFinalCakeShown) return;
 
-    const { width, height } = this.state;
-    const gapHeight = 180;
-    const minY = 50;
-    const maxY = height - gapHeight - 50;
-    const gapY = Math.random() * (maxY - minY) + minY;
+  const { width, height } = this.state;
+  const gapHeight = 180;
+  const minY = 50;
+  const maxY = height - gapHeight - 50;
+  const gapY = Math.random() * (maxY - minY) + minY;
 
-    const newObs: Obstacle = {
-      x: width,
-      gapY,
-      width: 60,
-      gapHeight
-    };
+  const coinLogos = this.getCoinLogos();
+  const coinSize = 32;
 
-    this.state.obstacles.push(newObs);
+  const topCount = Math.floor(gapY / coinSize);
+  const bottomCount = Math.floor((height - (gapY + gapHeight)) / coinSize);
 
-    if (this.collectedIngredients.length < this.cakeIngredients.length) {
-      this.addIngredientInObstacle(newObs);
-    } else if (this.collectedCandles < this.candlesCount) {
-      this.addCandleInObstacle(newObs);
-    }
+  const topStack: CoinLogo[] = [];
+  for (let i = 0; i < topCount; i++) {
+    const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
+    topStack.push(logo);
   }
+
+  const bottomStack: CoinLogo[] = [];
+  for (let i = 0; i < bottomCount; i++) {
+    const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
+    bottomStack.push(logo);
+  }
+
+  const newObs: Obstacle = {
+    x: width,
+    gapY,
+    width: 60,
+    gapHeight,
+    coinLogosTop: topStack,
+    coinLogosBottom: bottomStack
+  };
+
+  this.state.obstacles.push(newObs);
+
+  // ингредиенты и свечи как раньше
+  if (this.collectedIngredients.length < this.cakeIngredients.length) {
+    this.addIngredientInObstacle(newObs);
+  } else if (this.collectedCandles < this.candlesCount) {
+    this.addCandleInObstacle(newObs);
+  }
+}
+
 
   private addIngredientInObstacle(obs: Obstacle) {
     const nextIngredient = this.cakeIngredients.find(
