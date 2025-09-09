@@ -285,7 +285,6 @@ jump() {
   if (!this.state || this.state.isGameOver || !this.isGameStarted) return;
 
   this.state.velocity = -this.state.jumpPower;
-  this.soundService.play('playerJump');
 }
 
 
