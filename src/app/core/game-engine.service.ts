@@ -273,7 +273,6 @@ jump() {
   if (!this.state || this.state.isGameOver || !this.isGameStarted || new Date().getTime() - 200 < this.lastJumpTime) return;
   this.lastJumpTime = new Date().getTime();
   this.state.velocity = -this.state.jumpPower;
-  this.soundService.play('playerJump');
 }
 
 
