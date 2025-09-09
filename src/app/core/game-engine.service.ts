@@ -75,11 +75,11 @@ export class GameEngineService {
 
   async loadCakeIngredients() {
     const ingredientNames = [
-      'flour',
-      'egg',
-      'sugar',
-      'cocoa',
-      'strawberry',
+      // 'flour',
+      // 'egg',
+      // 'sugar',
+      // 'cocoa',
+      // 'strawberry',
       'cream',
       'candle'
     ];

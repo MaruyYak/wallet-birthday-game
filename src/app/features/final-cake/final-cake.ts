@@ -29,7 +29,7 @@ export class FinalCakeComponent implements OnChanges {
 
   private startAnimation() {
     this.showCake = false;
-    this.showBowlShake = false; // сбрасываем тряску
+    this.showBowlShake = false;
     this.falling = [];
 
     // имитация падения ингредиентов
@@ -41,7 +41,6 @@ export class FinalCakeComponent implements OnChanges {
     setTimeout(() => {
       this.showBowlShake = true;
 
-      // через 2 секунды показать торт
       setTimeout(() => {
         this.showBowlShake = false;
         this.showCake = true;
