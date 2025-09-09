@@ -17,7 +17,7 @@ export interface Letter {
 }
 
 export interface CoinLogo {
-  name: string; // название монеты
+  name: string;
   img: HTMLImageElement;
 }
 
@@ -38,29 +38,63 @@ export interface GameState {
   isFinalCakeShown: boolean;
 }
 
+export interface Ingredient {
+  name: string;
+  img: HTMLImageElement;
+}
+
 @Injectable({ providedIn: 'root' })
 export class GameEngineService {
   state!: GameState;
 
   public isGameStarted = false;
   private coinLogos: CoinLogo[] = [];
+  private cakeIngredients: Ingredient[] = [];
+  private collectedIngredients: Ingredient[] = [];
+  public candlesCount = 4;
+  public collectedCandles = 0;
 
-
-  getCollectedIngredients(): string[] {
-  return this.collectedIngredients;
-  }
-
-  getCollectedCandles(): number {
-    return this.collectedCandles;
-  }
-
-  getAllCakeIngredients(): string[] {
+  getAllCakeIngredients(): Ingredient[] {
     return this.cakeIngredients;
   }
 
-  getCandlesCount(): number {
-    return this.candlesCount;
+  getCollectedIngredients(): Ingredient[] {
+    return this.collectedIngredients;
   }
+
+  collectIngredient(ingredient: Ingredient) {
+    if (!this.collectedIngredients.includes(ingredient)) {
+      this.collectedIngredients.push(ingredient);
+    }
+  }
+
+  // Загрузка ингредиентов
+  async loadCakeIngredients() {
+    const ingredientNames = [
+      'flour',
+      'egg',
+      'sugar',
+      'cocoa',
+      'strawberry',
+      'cream',
+      'candle'
+    ];
+    this.cakeIngredients = [];
+
+    for (const name of ingredientNames) {
+      const img = new Image();
+      img.src = `assets/ingredients/${name}.png`;
+      await new Promise<void>((res) => {
+        img.onload = () => res();
+        img.onerror = () => {
+          console.warn(`Ingredient not loaded: ${name}`);
+          res();
+        };
+      });
+      this.cakeIngredients.push({ name, img });
+    }
+  }
+
 
     async loadCoinLogos() {
     const coins = ['btc', 'eth', 'usdt', 'ton', 'sol', 'bnb', 'shib', 'doge'];
@@ -83,12 +117,6 @@ export class GameEngineService {
   getCoinLogos(): CoinLogo[] {
     return this.coinLogos;
   }
-
-  // cakeIngredients;
-  private cakeIngredients = ['🌾', '🥛', '🥚', '🍯', '🍫', '🥭'];
-  private collectedIngredients: string[] = [];
-  private candlesCount = 4;
-  private collectedCandles = 0;
 
   init(width: number, height: number) {
     this.state = {
@@ -132,9 +160,7 @@ export class GameEngineService {
 
   update(dtSec: number) {
     const st = this.state;
-
     if (!this.isGameStarted) return;
-    // если финальный торт показан — фиксируем состояние (остановка физики)
     if (st.isFinalCakeShown) return;
     if (st.isGameOver) return;
 
@@ -189,7 +215,7 @@ export class GameEngineService {
       item.x -= 200 * dtSec;
 
       const playerSize = 32;
-      const itemSize = 24;
+      const itemSize = 32;
       if (
         st.playerX + playerSize / 2 > item.x &&
         st.playerX - playerSize / 2 < item.x + itemSize &&
@@ -198,22 +224,33 @@ export class GameEngineService {
       ) {
         item.collected = true;
 
-        if (this.cakeIngredients.includes(item.char)) {
-          this.collectedIngredients.push(item.char);
-        } else if (item.char === '🕯️') {
-          this.collectedCandles++;
+        const ing = this.cakeIngredients.find(i => i.name === item.char);
+        if (ing) {
+          if (ing.name === 'candle') {
+            this.collectedCandles++;
+          } else {
+            this.collectIngredient(ing);
+          }
         }
       }
     }
 
     // фильтруем старые предметы
-    st.letters = st.letters.filter(l => l.x + 24 > 0 && !l.collected);
+    st.letters = st.letters.filter(l => l.x + 32 > 0 && !l.collected);
 
     // проверка на финальный торт
     if (!st.isFinalCakeShown && this.allCollected()) {
       this.showFinalCake();
     }
+
+    const candlesOnField = st.letters.some(l => l.char === 'candle' && !l.collected);
+    const allIngredientsCollected = this.collectedIngredients.length === this.cakeIngredients.filter(i => i.name !== 'candle').length;
+    if (allIngredientsCollected && this.collectedCandles >= this.candlesCount && !candlesOnField) {
+      // сразу показываем финальный торт, если он ещё не показан
+      if (!st.isFinalCakeShown) this.showFinalCake();
+    }
   }
+
 
   jump() {
     if (this.state.isGameOver || !this.isGameStarted) return;
@@ -228,50 +265,57 @@ export class GameEngineService {
   }
 
   private addObstacle() {
-  if (this.state.isFinalCakeShown) return;
+    if (this.state.isFinalCakeShown) return;
 
-  const { width, height } = this.state;
-  const gapHeight = 180;
-  const minY = 50;
-  const maxY = height - gapHeight - 50;
-  const gapY = Math.random() * (maxY - minY) + minY;
+    const { width, height } = this.state;
+    const gapHeight = 180;
+    const minY = 50;
+    const maxY = height - gapHeight - 50;
+    const gapY = Math.random() * (maxY - minY) + minY;
 
-  const coinLogos = this.getCoinLogos();
-  const coinSize = 32;
+    const coinLogos = this.getCoinLogos();
+    const coinSize = 32;
 
-  const topCount = Math.floor(gapY / coinSize);
-  const bottomCount = Math.floor((height - (gapY + gapHeight)) / coinSize);
+    const topCount = Math.floor(gapY / coinSize);
+    const bottomCount = Math.floor((height - (gapY + gapHeight)) / coinSize);
 
-  const topStack: CoinLogo[] = [];
-  for (let i = 0; i < topCount; i++) {
-    const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
-    topStack.push(logo);
+    const topStack: CoinLogo[] = [];
+    for (let i = 0; i < topCount; i++) {
+      const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
+      topStack.push(logo);
+    }
+
+    const bottomStack: CoinLogo[] = [];
+    for (let i = 0; i < bottomCount; i++) {
+      const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
+      bottomStack.push(logo);
+    }
+
+    const newObs: Obstacle = {
+      x: width,
+      gapY,
+      width: 60,
+      gapHeight,
+      coinLogosTop: topStack,
+      coinLogosBottom: bottomStack
+    };
+
+    this.state.obstacles.push(newObs);
+
+    // --- ингредиенты и свечи ---
+    const collectedIngCount = this.collectedIngredients.length;
+    const totalIngCount = this.cakeIngredients.filter(i => i.name !== 'candle').length;
+
+    const candlesOnField = this.state.letters.filter(l => l.char === 'candle' && !l.collected).length;
+
+    if (collectedIngCount < totalIngCount) {
+      this.addIngredientInObstacle(newObs);
+    } else if (this.collectedCandles < this.candlesCount && candlesOnField === 0) {
+      // добавляем свечу только если игрок еще не собрал 4 свечи
+      this.addCandleInObstacle(newObs);
+    }
   }
 
-  const bottomStack: CoinLogo[] = [];
-  for (let i = 0; i < bottomCount; i++) {
-    const logo = coinLogos[Math.floor(Math.random() * coinLogos.length)];
-    bottomStack.push(logo);
-  }
-
-  const newObs: Obstacle = {
-    x: width,
-    gapY,
-    width: 60,
-    gapHeight,
-    coinLogosTop: topStack,
-    coinLogosBottom: bottomStack
-  };
-
-  this.state.obstacles.push(newObs);
-
-  // ингредиенты и свечи как раньше
-  if (this.collectedIngredients.length < this.cakeIngredients.length) {
-    this.addIngredientInObstacle(newObs);
-  } else if (this.collectedCandles < this.candlesCount) {
-    this.addCandleInObstacle(newObs);
-  }
-}
 
 
   private addIngredientInObstacle(obs: Obstacle) {
@@ -280,28 +324,36 @@ export class GameEngineService {
     );
     if (!nextIngredient) return;
 
-    const x = obs.x + obs.width / 2 - 12;
-    const y = obs.gapY + obs.gapHeight / 2 - 12;
+    const x = obs.x + obs.width / 2 - 16;
+    const y = obs.gapY + obs.gapHeight / 2 - 16;
 
     this.state.letters.push({
       x,
       y,
-      char: nextIngredient,
+      char: nextIngredient.name,
       collected: false
     });
   }
+
 
   private addCandleInObstacle(obs: Obstacle) {
-    const x = obs.x + obs.width / 2 - 12;
-    const y = obs.gapY + obs.gapHeight / 2 - 12;
+    if (this.collectedCandles >= this.candlesCount) return;
+
+    const candleIngredient = this.cakeIngredients.find(i => i.name === 'candle');
+    if (!candleIngredient) return;
+
+    const x = obs.x + obs.width / 2 - 16;
+    const y = obs.gapY + obs.gapHeight / 2 - 16;
 
     this.state.letters.push({
       x,
       y,
-      char: '🕯️',
+      char: 'candle',
       collected: false
     });
   }
+
+
 
   private showFinalCake() {
     this.state.isFinalCakeShown = true;

@@ -18,6 +18,8 @@ import { StartScreenComponent } from './start-screen/start-screen';
   templateUrl: './wallet-flappy.html',
   styleUrls: ['./wallet-flappy.scss'],
 })
+
+
 export class WalletFlappy implements AfterViewInit, OnDestroy {
   @ViewChild('canvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   private ctx!: CanvasRenderingContext2D;
@@ -63,6 +65,8 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
   // вызывается из start-screen
   async onStartGame() {
     await this.engine.loadCoinLogos(); // подгружаем все изображения
+    await this.engine.loadCakeIngredients();
+
     this.engine.startGame();
     this.cdr.detectChanges();
     setTimeout(() => this.initCanvas(), 0);
@@ -216,7 +220,6 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       ctx.restore();
     }
 
-    // --- checklist ингредиентов и свечей (вместо score) ---
     this.drawChecklist(ctx);
 
     // Game Over overlay
@@ -232,74 +235,117 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       ctx.textAlign = 'start';
     }
 
-    // препятствия — стопки монет
-    for (const obs of obstacles) {
-      const coinSize = 32;
-      const gapY = obs.gapY;
-      const bottomY = gapY + obs.gapHeight;
+  // препятствия — стопки монет с оболочкой
+  for (const obs of obstacles) {
+    const coinSize = 32;
+    const gapY = obs.gapY;
+    const bottomY = gapY + obs.gapHeight;
 
-      // верхняя стопка
-      obs.coinLogosTop.forEach((logo, i) => {
-        if (logo.img.complete) {
-          ctx.drawImage(logo.img, obs.x + obs.width / 2 - coinSize / 2, i * coinSize, coinSize, coinSize);
-        }
-      });
+    const framePadding = 6; // отступ вокруг стопки
+    const frameColor = 'rgba(255, 255, 255, 0.36)'; // лёгкая прозрачная рамка
+    const frameRadius = 8; // скругление углов
 
-      // нижняя стопка
-      obs.coinLogosBottom.forEach((logo, i) => {
-        if (logo.img.complete) {
-          ctx.drawImage(logo.img, obs.x + obs.width / 2 - coinSize / 2, bottomY + i * coinSize, coinSize, coinSize);
-        }
-      });
+    // верхняя стопка рамка
+    if (obs.coinLogosTop.length > 0) {
+      const frameHeight = obs.coinLogosTop.length * coinSize + framePadding * 2;
+      ctx.fillStyle = frameColor;
+      ctx.beginPath();
+      ctx.roundRect(
+        obs.x + obs.width / 2 - coinSize / 2 - framePadding,
+        0 - framePadding, // верхняя рамка от самого верха канваса
+        coinSize + framePadding * 2,
+        frameHeight,
+        frameRadius
+      );
+      ctx.fill();
     }
+
+    // верхняя стопка монет
+    obs.coinLogosTop.forEach((logo, i) => {
+      if (logo.img.complete) {
+        ctx.drawImage(
+          logo.img,
+          obs.x + obs.width / 2 - coinSize / 2,
+          i * coinSize,
+          coinSize,
+          coinSize
+        );
+      }
+    });
+
+    // нижняя стопка рамка
+    if (obs.coinLogosBottom.length > 0) {
+      const frameHeight = obs.coinLogosBottom.length * coinSize + framePadding * 2;
+      ctx.fillStyle = frameColor;
+      ctx.beginPath();
+      ctx.roundRect(
+        obs.x + obs.width / 2 - coinSize / 2 - framePadding,
+        bottomY - framePadding,
+        coinSize + framePadding * 2,
+        frameHeight,
+        frameRadius
+      );
+      ctx.fill();
+    }
+
+    // нижняя стопка монет
+    obs.coinLogosBottom.forEach((logo, i) => {
+      if (logo.img.complete) {
+        ctx.drawImage(
+          logo.img,
+          obs.x + obs.width / 2 - coinSize / 2,
+          bottomY + i * coinSize,
+          coinSize,
+          coinSize
+        );
+      }
+    });
+  }
+
 
     // ингредиенты и свечи (на игровом поле)
-    ctx.fillStyle = '#e53e3e';
-    ctx.font = 'bold 35px system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.textAlign = 'center';
     for (const item of letters) {
       if (!item.collected) {
-        ctx.fillText(item.char, item.x + 12, item.y + 18);
+        const ing = this.engine.getAllCakeIngredients().find(i => i.name === item.char);
+        if (ing?.img.complete) {
+          ctx.drawImage(ing.img, item.x, item.y, 40, 40);
+        }
       }
     }
-    ctx.textAlign = 'start';
   }
 
- private drawChecklist(ctx: CanvasRenderingContext2D) {
-  const padding = 12;
-  const y = 20;
-  const box = 20;
-  let x = padding;
+  private drawChecklist(ctx: CanvasRenderingContext2D) {
+    const ingredients = this.engine.getAllCakeIngredients().filter(i => i.name !== 'candle');
+    const collectedIngredients = this.engine.getCollectedIngredients();
 
-  const ingredients = this.engine.getAllCakeIngredients();
-  const collectedIngredients = this.engine.getCollectedIngredients();
-  const collectedCandles = this.engine.getCollectedCandles();
-  const totalCandles = this.engine.getCandlesCount();
+    const padding = 12;
+    let x = padding;
+    const y = 20;
+    const size = 24;
 
-  ctx.textAlign = 'center';
-  ctx.font = '20px system-ui, -apple-system, Segoe UI, Roboto';
+    // --- обычные ингредиенты ---
+    for (const ing of ingredients) {
+      const isCollected = collectedIngredients.includes(ing);
+      ctx.globalAlpha = isCollected ? 1 : 0.4;
+      if (ing.img.complete) ctx.drawImage(ing.img, x, y, size, size);
+      x += size + 8;
+    }
 
-  // ингредиенты — серые по умолчанию, окрашиваются при сборе
-  for (const ing of ingredients) {
-    const isCollected = collectedIngredients.includes(ing);
-    ctx.fillStyle = isCollected ? '#fff' : 'rgba(255,255,255,0.4)'; // серый/белый
-    ctx.fillText(ing, x + box / 2, y);
-    x += box + 8;
-  }
+    // --- свечи ---
+    const candleIngredient = this.engine.getAllCakeIngredients().find(i => i.name === 'candle');
+    if (candleIngredient) {
+      for (let i = 0; i < this.engine.candlesCount; i++) {
+        const isCollected = i < this.engine.collectedCandles;
+        ctx.globalAlpha = isCollected ? 1 : 0.4;
+        if (candleIngredient.img.complete) ctx.drawImage(candleIngredient.img, x, y, size, size);
+        x += size + 8;
+      }
+    }
 
-  // небольшая пауза между ингредиентами и свечами
-  x += 8;
-
-  // свечи
-  for (let i = 0; i < totalCandles; i++) {
-    const isCollected = i < collectedCandles;
-    ctx.fillStyle = isCollected ? '#fff' : 'rgba(255,255,255,0.4)';
-    ctx.fillText('🕯️', x + box / 2, y);
-    x += box + 8;
-  }
-
-  ctx.textAlign = 'start';
+    ctx.globalAlpha = 1;
 }
+
+
 
   private resetGraph() {
     this.graphPoints = [];
