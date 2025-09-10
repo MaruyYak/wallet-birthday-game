@@ -7,10 +7,9 @@
     <div *ngIf="showBowl" class="bowl" [class.shake]="showBowlShake">
         <img [src]="bowlImg" alt="bowl" />
     </div>
-
     <div *ngIf="showCake" class="cake big">
         <img [src]="cakeImg" alt="cake" />
-    
+
         <img *ngFor="let candle of candles"
             [src]="candle.png"
             [class.blown]="candle.blown"

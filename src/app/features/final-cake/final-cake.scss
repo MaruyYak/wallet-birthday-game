@@ -97,19 +97,46 @@
   background: #ff4757;
 }
 
+// .cake .candle {
+//   position: absolute;
+//   cursor: pointer;
+//   transition: transform 0.4s ease, opacity 0.4s ease;
+// }
+
+// .cake .candle:nth-child(4) { top: 0; left: 0%; } /* красная */
+// .cake .candle:nth-child(2) { top: 0; left: 0%; } /* зеленая */
+// .cake .candle:nth-child(3) { top: 0; left: 0%; } /* розовая */
+// .cake .candle:nth-child(5) { top: 0; left: 0%; } /* синяя */
+
+// .cake .candle.blown {
+//   transform: scale(0);
+//   opacity: 0;
+// }
+
 .cake .candle {
   position: absolute;
   cursor: pointer;
   transition: transform 0.4s ease, opacity 0.4s ease;
+  animation: flame 2s infinite ease-in-out alternate;
+  transform-origin: bottom center; 
 }
 
-/* позиции свечей на торте (примерно) */
-.cake .candle:nth-child(4) { top: 0; left: 0%; } /* красная */
-.cake .candle:nth-child(2) { top: 0; left: 0%; } /* зеленая */
+/* позиции свечей на торте (пример) */
+.cake .candle:nth-child(2) { top: 0; left: 0%; }  /* зеленая */
 .cake .candle:nth-child(3) { top: 0; left: 0%; } /* розовая */
+.cake .candle:nth-child(4) { top: 0; left: 0%; } /* красная */
 .cake .candle:nth-child(5) { top: 0; left: 0%; } /* синяя */
 
 .cake .candle.blown {
   transform: scale(0);
   opacity: 0;
+  animation: none;
+}
+
+@keyframes flame {
+  0%   { transform: scale(0.98) rotate(-0.1deg); opacity: 0.9; }
+  25%  { transform: scale(1) rotate(0.2deg); opacity: 1; }
+  50%  { transform: scale(0.96) rotate(-0.1deg); opacity: 0.85; }
+  75%  { transform: scale(1) rotate(0.2deg); opacity: 1; }
+  100% { transform: scale(0.97) rotate(-0.1deg); opacity: 0.9; }
 }

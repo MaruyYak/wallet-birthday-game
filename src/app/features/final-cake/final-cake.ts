@@ -76,20 +76,21 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
     this.showBowlShake = true;
     setTimeout(() => {
       this.showBowl = false;
-    }, 1800);
+    }, 1500);
     if (this.isBrowser) this.soundService.play('bowlShake');
 
     setTimeout(() => {
       this.showBowlShake = false;
       this.showCake = true;
-      if (this.isBrowser) this.soundService.play('cakeAppear');
+      if (this.isBrowser )this.soundService.stop('bowlShake');
+      if (this.isBrowser) this.soundService.play('cakeAppear', 0.6);
     }, 1500);
   }
 
   blowCandle(candle: any) {
     if (!candle.blown) {
       candle.blown = true;
-      if (this.isBrowser) this.soundService.play('candleBlow');
+      if (this.isBrowser) this.soundService.play('candleBlow', 1);
     }
   }
 

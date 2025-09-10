@@ -3,11 +3,10 @@ import { Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class SoundService {
   private sounds: { [key: string]: HTMLAudioElement } = {};
-  private isBrowser = typeof window !== 'undefined'; // проверка на браузер
+  private isBrowser = typeof window !== 'undefined';
 
   constructor() {}
 
-  /** Загружаем все звуки (только в браузере) */
   public loadAllSounds() {
     if (!this.isBrowser) return;
 
@@ -20,7 +19,6 @@ export class SoundService {
     this.loadSound('ingFalling', 'assets/sounds/falling.mp3');
   }
 
-  /** Создаём Audio элемент и добавляем в словарь */
   private loadSound(name: string, path: string) {
     if (!this.isBrowser) return;
 
@@ -29,13 +27,13 @@ export class SoundService {
     this.sounds[name] = audio;
   }
 
-  /** Проигрываем звук по имени */
-  public play(name: string) {
+  public play(name: string, volume: number = 1) {
     if (!this.isBrowser) return;
 
     const audio = this.sounds[name];
     if (audio) {
-      audio.currentTime = 0; // можно повторять быстро
+      audio.currentTime = 0;
+      audio.volume = volume;
       audio.play().catch(err => console.warn(`Ошибка воспроизведения звука ${name}:`, err));
     }
   }
