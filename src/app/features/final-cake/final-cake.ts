@@ -24,6 +24,14 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
 
   isBrowser = false;
 
+  // новое: состояние свечей
+  candles = [
+    { name: 'red', png: 'assets/cake/red.png', blown: false },
+    { name: 'green', png: 'assets/cake/green.png', blown: false },
+    { name: 'pink', png: 'assets/cake/pink.png', blown: false },
+    { name: 'blue', png: 'assets/cake/blue.png', blown: false }
+  ];
+
   constructor(
     private soundService: SoundService,
     @Inject(PLATFORM_ID) private platformId: Object
@@ -33,7 +41,7 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
 
   ngAfterViewInit() {
     if (this.isBrowser) {
-      this.soundService.loadAllSounds(); // загружаем звуки только в браузере
+      this.soundService.loadAllSounds();
     }
   }
 
@@ -47,12 +55,12 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
     this.showCake = false;
     this.falling = [];
 
-    // имитация падения ингредиентов
+    this.candles.forEach(c => c.blown = false); // сброс свечей
+
     this.ingredients.forEach((ing, i) => {
       setTimeout(() => this.falling.push(ing), i * 600);
     });
 
-    // после падения всех ингредиентов показать торт
     setTimeout(() => {
       this.showFinalCakeSequence();
     }, this.ingredients.length * 600 + 100);
@@ -60,7 +68,7 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
 
   showFinalCakeSequence() {
     this.showBowlShake = true;
-      setTimeout(() => {
+    setTimeout(() => {
       this.showBowl = false;
     }, 1800);
     if (this.isBrowser) this.soundService.play('bowlShake');
@@ -72,6 +80,14 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
     }, 1500);
   }
 
+  // новое: клик по свече
+  blowCandle(candle: any) {
+    if (!candle.blown) {
+      candle.blown = true;
+      if (this.isBrowser) this.soundService.play('candleBlow');
+    }
+  }
+
   onRestart() {
     if (this.isBrowser) {
       this.soundService.stop('cakeAppear');
@@ -80,5 +96,4 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
 
     this.restart.emit();
   }
-
 }

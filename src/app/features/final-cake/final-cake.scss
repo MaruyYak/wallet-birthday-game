@@ -96,3 +96,20 @@
 .restart-btn:hover {
   background: #ff4757;
 }
+
+.cake .candle {
+  position: absolute;
+  cursor: pointer;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+/* позиции свечей на торте (примерно) */
+.cake .candle:nth-child(4) { top: 0; left: 0%; } /* красная */
+.cake .candle:nth-child(2) { top: 0; left: 0%; } /* зеленая */
+.cake .candle:nth-child(3) { top: 0; left: 0%; } /* розовая */
+.cake .candle:nth-child(5) { top: 0; left: 0%; } /* синяя */
+
+.cake .candle.blown {
+  transform: scale(0);
+  opacity: 0;
+}

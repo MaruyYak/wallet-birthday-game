@@ -16,6 +16,7 @@ export class SoundService {
     this.loadSound('playerJump', 'assets/sounds/player-jump.mp3');
     this.loadSound('ingredientCollect', 'assets/sounds/ingredient-collect.mp3');
     this.loadSound('collision', 'assets/sounds/collision.mp3');
+    this.loadSound('candleBlow', 'assets/sounds/candle-blow.mp3');
   }
 
   /** Создаём Audio элемент и добавляем в словарь */
