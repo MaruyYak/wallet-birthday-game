@@ -86,11 +86,11 @@ collectIngredient(ingredient: Ingredient) {
   async loadCakeIngredients() {
     const ingredientNames = [
       'flour',
-      // 'egg',
-      // 'sugar',
-      // 'cocoa',
-      // 'strawberry',
-      // 'cream',
+      'egg',
+      'sugar',
+      'cocoa',
+      'strawberry',
+      'cream',
       'candle'
     ];
     this.cakeIngredients = [];
