@@ -11,7 +11,7 @@ export interface Obstacle {
   logo: CoinLogo;
 }
 
-export interface Letter {
+export interface Items {
   x: number;
   y: number;
   char: string;
@@ -36,7 +36,7 @@ export interface GameState {
   obstacles: Obstacle[];
   obstacleTimer: number;
   obstacleInterval: number;
-  items: Letter[];
+  items: Items[];
   isFinalCakeShown: boolean;
 }
 

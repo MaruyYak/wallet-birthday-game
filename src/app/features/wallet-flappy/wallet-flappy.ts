@@ -181,7 +181,7 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       return; 
     }
 
-    // --- игрок (Telegram) ---
+    // --- игрок---
     if (this.telegramImg && this.telegramImg.complete && this.telegramImg.naturalWidth > 0) {
       const size = 42;
       const maxAngle = Math.PI / 4;
@@ -236,8 +236,6 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
       ctx.fill();
     }
   }
-
-
 
     // ингредиенты и свечи (на игровом поле)
     for (const item of items) {

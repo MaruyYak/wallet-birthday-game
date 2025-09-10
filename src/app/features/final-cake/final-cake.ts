@@ -55,16 +55,22 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
     this.showCake = false;
     this.falling = [];
 
-    this.candles.forEach(c => c.blown = false); // сброс свечей
+    this.candles.forEach(c => c.blown = false);
 
     this.ingredients.forEach((ing, i) => {
-      setTimeout(() => this.falling.push(ing), i * 600);
+      setTimeout(() => {
+        this.falling.push(ing);
+        if (this.isBrowser) {
+          this.soundService.play('ingFalling');
+        }
+      }, i * 600);
     });
 
     setTimeout(() => {
       this.showFinalCakeSequence();
     }, this.ingredients.length * 600 + 100);
   }
+
 
   showFinalCakeSequence() {
     this.showBowlShake = true;
@@ -80,7 +86,6 @@ export class FinalCakeComponent implements OnChanges, AfterViewInit {
     }, 1500);
   }
 
-  // новое: клик по свече
   blowCandle(candle: any) {
     if (!candle.blown) {
       candle.blown = true;
