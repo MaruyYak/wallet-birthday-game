@@ -82,24 +82,6 @@ collectIngredient(ingredient: Ingredient) {
   }
 }
 
-// GameEngineService
-public forceFinalCake() {
-  if (!this.state) return;
-  
-  // отмечаем финальный экран
-  this.state.isFinalCakeShown = true;
-
-  // очищаем поле и препятствия
-  this.state.obstacles = [];
-  this.state.items = [];
-
-  // можно сбросить таймеры
-  this.showFinalTimer = null;
-
-  // для плавной анимации
-  this.finalCakeOpacity = 1;
-}
-
 
   async loadCakeIngredients() {
     const ingredientNames = [
