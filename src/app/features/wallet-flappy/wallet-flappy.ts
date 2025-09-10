@@ -38,6 +38,11 @@ export class WalletFlappy implements AfterViewInit, OnDestroy {
 
   constructor(public engine: GameEngineService, private cdr: ChangeDetectorRef) {}
 
+  // WalletFlappy
+  onTestFinalScreen() {
+    this.engine.forceFinalCake();
+  }
+
   ngAfterViewInit(): void {
     this.setCanvasSize();
     window.addEventListener('resize', () => this.setCanvasSize());

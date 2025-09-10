@@ -72,15 +72,33 @@ getAllCakeIngredients(): Ingredient[] {
   return this.cakeIngredients;
 }
 
-  getCollectedIngredients(): Ingredient[] {
-    return this.collectedIngredients;
-  }
+getCollectedIngredients(): Ingredient[] {
+  return this.collectedIngredients;
+}
 
-  collectIngredient(ingredient: Ingredient) {
-    if (!this.collectedIngredients.includes(ingredient)) {
-      this.collectedIngredients.push(ingredient);
-    }
+collectIngredient(ingredient: Ingredient) {
+  if (!this.collectedIngredients.includes(ingredient)) {
+    this.collectedIngredients.push(ingredient);
   }
+}
+
+// GameEngineService
+public forceFinalCake() {
+  if (!this.state) return;
+  
+  // отмечаем финальный экран
+  this.state.isFinalCakeShown = true;
+
+  // очищаем поле и препятствия
+  this.state.obstacles = [];
+  this.state.items = [];
+
+  // можно сбросить таймеры
+  this.showFinalTimer = null;
+
+  // для плавной анимации
+  this.finalCakeOpacity = 1;
+}
 
 
   async loadCakeIngredients() {
